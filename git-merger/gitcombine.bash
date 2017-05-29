@@ -1,13 +1,23 @@
 
 # Get the options from the arguments.
-while getopts s:d: opts; do
+while getopts s:d:n: opts; do
    case ${opts} in
       s) SOURCE_REPO=${OPTARG} ;;
       d) DEST_REPO=${OPTARG} ;;
+      n) REL_DEST_PATH=${OPTARG} ;;
    esac
 done
 
 # Validation.
+
+if [ -z ${REL_DEST_PATH+x} ];
+then
+  echo "Please provide a folder name of where the source should end up in the destination (-n). No leading slash.";
+  exit;
+else
+  echo "The destination folder is '$REL_DEST_PATH'";
+fi
+
 
 # make sure a source was given.
 # Make sure it is a full path and exists and is a repo.
@@ -39,9 +49,9 @@ git -C $DEST_REPO branch ${REMOTE_NAME}_master $REMOTE_NAME/master
 git -C $DEST_REPO checkout ${REMOTE_NAME}_master
 
 # The files are in the root, make a subdir and move them to there.
-SOURCE_REL_PATH_IN_DEST=abc123foobar
+SOURCE_REL_PATH_IN_DEST=$REL_DEST_PATH
 # mkdir with all path segments.
-mkdir $DEST_REPO/$SOURCE_REL_PATH_IN_DEST
+mkdir -p $DEST_REPO/$SOURCE_REL_PATH_IN_DEST
 # Possible that I need to "cd" at this point to make this work. Need confirmation of xargs.
 git -C $DEST_REPO ls-tree -z --name-only HEAD | xargs -0 -I {} git mv {} $SOURCE_REL_PATH_IN_DEST/
 git -C $DEST_REPO commit -m "Moved the files for $SOURCE_REPO into a subdirectory."
@@ -51,26 +61,26 @@ git -C $DEST_REPO merge --allow-unrelated-histories ${REMOTE_NAME}_master
 
 
 
-
------------------------------
-When merging `secondrepo/` into `firstgitrepo/`.
-
-# Add the second repo as a remote:
-cd firstgitrepo/
-git remote add secondrepo username@servername:andsoon
-
-# Make sure that you've downloaded all of the secondrepo's commits:
-git fetch secondrepo
-
-# Create a local branch from the second repo's branch:
-git branch branchfromsecondrepo secondrepo/master
-
-# Move all its files into a subdirectory:
-git checkout branchfromsecondrepo
-mkdir subdir/
-git ls-tree -z --name-only HEAD | xargs -0 -I {} git mv {} subdir/
-git commit -m "Moved files to subdir/"
-
-# Merge the second branch into the first repo's master branch:
-git checkout master
-git merge --allow-unrelated-histories branchfromsecondrepo
+#
+# -----------------------------
+# When merging `secondrepo/` into `firstgitrepo/`.
+#
+# # Add the second repo as a remote:
+# cd firstgitrepo/
+# git remote add secondrepo username@servername:andsoon
+#
+# # Make sure that you've downloaded all of the secondrepo's commits:
+# git fetch secondrepo
+# 
+# # Create a local branch from the second repo's branch:
+# git branch branchfromsecondrepo secondrepo/master
+#
+# # Move all its files into a subdirectory:
+# git checkout branchfromsecondrepo
+# mkdir subdir/
+# git ls-tree -z --name-only HEAD | xargs -0 -I {} git mv {} subdir/
+# git commit -m "Moved files to subdir/"
+#
+# # Merge the second branch into the first repo's master branch:
+# git checkout master
+# git merge --allow-unrelated-histories branchfromsecondrepo
